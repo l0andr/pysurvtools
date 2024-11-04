@@ -1,0 +1,8 @@
+0. Enable output in TIFF format for all plots.
+1. Review all plot types in SurvPlots and create corresponding tests.
+2. Verify the L1 ratio/penalizer estimation mode in Cox-Analysis.
+3. Validate legend generation in OncoPlot.
+4. Add Version 
+5. Create posibility to use all plots from python by function call
+6. Create general data transformation and pre-paration functions for all tools
+
