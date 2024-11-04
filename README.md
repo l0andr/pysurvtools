@@ -74,7 +74,7 @@ python survplots.py --input_csv tdf.csv --survival_time_col disease_free_time --
 | `--filter_nan_columns`   | Comma-separated list of columns in which NaN values will be filtered out. This helps ensure that missing data in these columns does not interfere with plotting.                   | `str`    | `""`                |
 | `--title`                | Title for the plot, which will appear in the output figures.                                                                                                                       | `str`    | `""`                |
 
-## Plot Types
+#### Plot Types
 
 SurvPlots supports a variety of plot types, each tailored for different aspects of survival data visualization:
 
@@ -96,3 +96,62 @@ SurvPlots supports a variety of plot types, each tailored for different aspects 
 ---
 </details>
 
+### Cox_analysis
+
+<table>
+   <tr>
+      <td>
+         <img src= "img/cox_analysis_exmp1.png" >
+      </td>
+      <td>
+         <img src= "img/cox_analysis_exmp2.png" >
+      </td>
+   </tr>
+</table>
+
+Usage example:
+```
+python cox_analysis.py -input_csv 2024_transformed.csv --genes "" --factors sex,age,p16,smoking,race,cancer_type,prior_cancer,drugs,treatment_type0,total_mutations,anatomic_stage,msi_status,tmb_level,lvi,pni,smoking_packs,pdl1_category,response_0,alcohol_history --penalizer 0.01 --l1ratio 0.01 --univar "" $show --model_report $output_dir/figure_3_overall_survival_cox_univariant_factors.pdf --title "overall survival time "
+```
+
+
+<details>
+     <summary>Parameters and options of cox_analysis</summary>
+     ## Cox-Analysis Tool Options
+
+| Option                   | Description                                                                                                                                                                       | Type     | Default Value         |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------|
+| `-input_csv`             | Path to the input CSV file containing survival data. This file should include columns like patient IDs, event status, survival time, and relevant covariates.                     | `str`    | **Required**          |
+| `--min_cases`            | Minimum number of cases required for mutation columns. Genes with fewer cases are excluded from the analysis.                                                                     | `int`    | `3`                   |
+| `--genes`                | Comma-separated list of genes of interest for the analysis.                                                                                                                       | `str`    | `None`                |
+| `--factors`              | Comma-separated list of additional factors of interest to be included in the model.                                                                                               | `str`    | `None`                |
+| `--status_col`           | Column name representing the event status (e.g., death or relapse).                                                                                                              | `str`    | `"status"`            |
+| `--survival_time_col`    | Column name representing survival time, typically recorded in days.                                                                                                              | `str`    | `"survival_in_days"`  |
+| `--patient_id_col`       | Column name for patient IDs to ensure observations are properly tracked.                                                                                                          | `str`    | `"patient_id"`        |
+| `--calib_t0`             | Time used for model calibration in survival probability calculations.                                                                                                             | `int`    | `1900`                |
+| `--l1ratio`              | Ratio of L1 regularization in the Cox model’s penalty. If negative, a grid search is performed to optimize this value.                                                            | `float`  | `-1`                  |
+| `--penalizer`            | Penalization parameter for the Cox model optimizer. If negative, a grid search is performed to find the optimal value.                                                            | `float`  | `-1`                  |
+| `--opt_report`           | Path for saving the optimization report PDF, detailing results from grid search and parameter tuning.                                                                             | `str`    | `"cox_optim_report.pdf"` |
+| `--model_report`         | Path for saving the model report PDF, including model summary and statistical tests.                                                                                              | `str`    | `"cox_model_report.pdf"`  |
+| `--univar`               | If set, performs univariate analysis on specified factors, varying each factor in isolation.                                                                                      | `str`    | `None`                |
+| `--verbose`              | Verbose level for logging output, where `0` is silent and higher numbers increase the level of detail.                                                                            | `int`    | `1`                   |
+| `--show`                 | If set, displays plots interactively in addition to saving them to the PDF.                                                                                                       | `flag`   | `False`               |
+| `--plot_outcome`         | If set, generates and displays plots of partial effects on the outcome.                                                                                                          | `flag`   | `False`               |
+| `--filter_nan`           | If set, removes rows with NaN values across gene and factor columns.                                                                                                              | `flag`   | `False`               |
+| `--filter_nan_columns`   | Comma-separated list of columns to filter out NaN values from, ensuring completeness in specific variables.                                                                      | `str`    | `""`                  |
+| `--title`                | Title for the plot, which will appear in the output figures.                                                                                                                      | `str`    | `""`                  |
+
+#### Cox-Analysis Plot Types and Outputs
+
+The **Cox-Analysis** tool, built around the **lifelines** library for survival analysis ([Davidson-Pilon, 2019](https://doi.org/10.21105/joss.01317)), supports various plots and statistical summaries for analyzing survival data:
+
+1. **Univariate Analysis Plot**  
+   Conducts univariate Cox regression for each specified factor individually, allowing visualization of the hazard ratios and confidence intervals. This plot highlights factors with significant effects on survival, helping to identify potential predictors for further analysis.
+
+2. **Grid Search Optimization Heatmaps**  
+   When L1 ratio and penalizer values are set to `-1`, the tool performs a grid search and generates heatmaps of model performance metrics (e.g., concordance index, log-likelihood) across different parameter combinations. These plots provide insights into optimal penalization settings for the Cox model.
+
+3. **Model Summary and Tree Plot**  
+   Once the model is fit, the tool generates a forest plot of significant factors with hazard ratios and confidence intervals. This summary plot visually conveys the risk associated with each factor, aiding in the interpretation of multivariate results.
+ 
+</details>        
