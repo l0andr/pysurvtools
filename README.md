@@ -117,7 +117,6 @@ python cox_analysis.py -input_csv 2024_transformed.csv --genes "" --factors sex,
 
 <details>
      <summary>Parameters and options of cox_analysis</summary>
-     ## Cox-Analysis Tool Options
 
 | Option                   | Description                                                                                                                                                                       | Type     | Default Value         |
 |--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-----------------------|
@@ -155,3 +154,55 @@ The **Cox-Analysis** tool, built around the **lifelines** library for survival a
    Once the model is fit, the tool generates a forest plot of significant factors with hazard ratios and confidence intervals. This summary plot visually conveys the risk associated with each factor, aiding in the interpretation of multivariate results.
  
 </details>        
+
+### oncoplot
+
+<table>
+   <tr>
+      <td>
+         <img src= "img/oncoplot_exmp1.png" >
+      </td>
+   </tr>
+</table>
+
+Usage example:
+```
+python oncoplot.py -input_mutation tcga_data2.csv -output_file $output_dir/figure_2_TCGA_oncoplot.pdf -list_of_factors sex,smoking,cancer_type $show --number_of_genes 30 -list_of_genes TP53,CDKN2A,TERT,FAT1,KMT2D,PIK3CA,FGF3,NOTCH1,FGF4,ZNF750,ARID1A,CCND1,LRP1B,CDKN2B,EGFR,KMT2C,CASP8,NFE2L2,CYLD,FBXW7,FLCN,MTAP,MYL1,NOTCH3,SMAD4,SOX2,B2M,ARID2,ASXL1,CIC --verbose 1 --nosortgenes --title "Oncoplot TCGA cohort"
+```
+<details>
+     <summary>Parameters and options of oncoplot</summary>
+
+   ## pyoncoplot Tool Options
+
+| Option               | Description                                                                                                                                                        | Type     | Default Value       |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|---------------------|
+| `-input_mutation`    | Path to the input file containing mutation data. This file should include columns like `patient_id` and columns for gene mutation statuses.                       | `str`    | **Required**        |
+| `-output_file`       | Path to the output file where the oncoplot will be saved. Accepts `.pdf` or `.png` file formats.                                                                   | `str`    | **Required**        |
+| `-list_of_factors`   | Comma-separated list of clinical or categorical factors to display as annotations above the oncoplot.                                                             | `str`    | **Required**        |
+| `-list_of_genes`     | Comma-separated list of specific genes to display on the oncoplot. Only these genes will be included, if provided.                                                | `str`    | `""`                |
+| `--nosortgenes`      | If set, disables sorting of genes on the plot. By default, genes are sorted by mutation frequency.                                                                | `flag`   | `False`             |
+| `--show`             | If set, displays the oncoplot interactively in addition to saving it to a file.                                                                                   | `flag`   | `False`             |
+| `--number_of_genes`  | Number of genes to display on the plot, selected based on mutation frequency if `-list_of_genes` is not specified.                                                | `int`    | `20`                |
+| `--verbose`          | Verbose level for logging output, where `0` is silent and higher numbers increase the level of detail.                                                            | `int`    | `1`                 |
+| `--title`            | Title for the oncoplot, which will appear at the top of the figure.                                                                                               | `str`    | `""`                |
+
+## pyoncoplot Plot Features and Annotations
+
+The **pyoncoplot** tool, based on the **pyoncoprint** library ([PubMed link](https://pubmed.ncbi.nlm.nih.gov/37037472/)), generates oncoprints for visualizing mutation data across patients and genes. It allows for customization and includes various options for annotations and formatting:
+
+1. **Oncoplot Display of Mutation Types**  
+   The oncoplot represents mutations across patients for each specified gene, with mutation types marked by distinct symbols. Genes with frequent mutations are highlighted by default. Users can also provide a specific list of genes for display, ensuring that only relevant genes are shown.
+
+2. **Sorting and Selection of Genes**  
+   Genes can be automatically sorted by mutation frequency, or users can disable sorting (`--nosortgenes`) to retain the order from the input file. Additionally, users can limit the number of genes displayed using `--number_of_genes`, helping to focus on the most impactful mutations.
+
+3. **Clinical Annotations Above the Plot**  
+   Clinical factors (e.g., stage, response) specified with `-list_of_factors` are added as annotations above the oncoplot. These annotations are color-coded based on unique values, with automatic replacement of values (e.g., stages represented as Roman numerals, response classifications) for easier interpretation.
+
+4. **Color-Coded Legends for Annotations**  
+   A color legend is automatically generated for each annotated factor, providing clarity on categories such as stages or treatment responses. The color maps are customizable and automatically adjust to fit unique values for each annotation.
+
+5. **Output as PDF or PNG**  
+   The oncoplot can be saved as a PDF (multi-page) or PNG (single image) file, making it easy to incorporate into reports or presentations. The tool also supports interactive viewing with `--show` for detailed examination.
+
+</details>
