@@ -23,8 +23,8 @@ Before installing, ensure you have the following:
 
    Open your shell and run:
    ```bash
-   git clone <repository_url>
-   cd <repository_name>
+   git clone https://github.com/l0andr/pysurvtools.git
+   cd pysurvtools
    ```
 2. **Install requirements**:
 
