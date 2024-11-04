@@ -31,4 +31,68 @@ Before installing, ensure you have the following:
    ```  
    pip install -r requirements.txt
    ```
- 
+## Tools description
+
+### Survplots
+
+<table>
+   <tr>
+      <td>
+         <img src= "img/survplots_exmp1.png" >
+      </td>
+      <td>
+         <img src= "img/survplots_exmp2.png" >
+      </td>
+   </tr>
+</table>
+
+Usage example:
+```
+python survplots.py --input_csv tdf.csv --survival_time_col disease_free_time --plot kaplan_meier --max_survival_length 2000 --columns tnum,response,sex,cancer_type,alcohol_history,drugs,anatomic_stage,gene_FGF4,gene_CDKN2A,gene_MYL1,gene_ARID2 --output_pdf $output_dir/figure_6_disease_free_time_kaplan_meier.pdf --min_size_of_group 0.01 --custom_legend km_legend.json --filter_nan_columns treatment_type,response
+
+```
+
+
+<details>
+     <summary>Parameters and options of survplots</summary>
+
+| Option                   | Description                                                                                                                                                                         | Type     | Default Value       |
+|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|---------------------|
+| `--input_csv`            | Path to the input CSV file containing survival data. This file should include relevant columns, such as patient IDs, event status, and survival time.                               | `str`    | **Required**        |
+| `--output_pdf`           | Path to the output PDF file where all generated figures will be saved.                                                                                                             | `str`    | **Required**        |
+| `--plot`                 | Type of plot to generate. Options include: `kaplan_meier`, `pieplots`, `floathistograms`, `valuecounts`, and `fisher_exact_test`.                                                  | `str`    | `"kaplan_meier"`    |
+| `--status_col`           | Column name for the event status indicator (e.g., whether an event, such as death or relapse, has occurred).                                                                       | `str`    | `"status"`          |
+| `--survival_time_col`    | Column name for survival time, usually recorded in days.                                                                                                                           | `str`    | `"survival_in_days"`|
+| `--patient_id_col`       | Column name for patient IDs, useful for linking observations.                                                                                                                      | `str`    | `"patient_id"`      |
+| `--columns`              | One or more specific columns to include in the plot. Separate multiple columns with commas. Supports wildcard `*` at the end to include columns starting with a specific prefix. | `str`    | `""`                |
+| `--min_size_of_group`    | Minimum group size for Kaplan-Meier plots, defined as a fraction of all cases. Helps exclude small groups from analysis.                                                            | `float`  | `0.07`              |
+| `--max_amount_of_groups` | Maximum number of groups per factor to display. Ensures the plot remains readable by limiting the number of groups.                                                                 | `int`    | `10`                |
+| `--max_survival_length`  | Maximum time interval (in days) to consider for Kaplan-Meier plots. Any survival times beyond this will be truncated to the specified length.                                      | `float`  | `1825` (5 years)    |
+| `--show`                 | If set, displays plots interactively in addition to saving them to the PDF.                                                                                                        | `flag`   | `False`             |
+| `--verbose`              | Verbose level for logging output, where `0` is silent and higher numbers increase the level of detail.                                                                             | `int`    | `1`                 |
+| `--custom_legend`        | Path to a JSON file containing custom legends for Kaplan-Meier plot labels. The JSON format should define group labels for each column used in the plot.                           | `str`    | `None`              |
+| `--filter_nan_columns`   | Comma-separated list of columns in which NaN values will be filtered out. This helps ensure that missing data in these columns does not interfere with plotting.                   | `str`    | `""`                |
+| `--title`                | Title for the plot, which will appear in the output figures.                                                                                                                       | `str`    | `""`                |
+
+## Plot Types
+
+SurvPlots supports a variety of plot types, each tailored for different aspects of survival data visualization:
+
+1. **Kaplan-Meier Plot (`kaplan_meier`)**  
+   Generates Kaplan-Meier survival curves for specified groups, useful for comparing survival distributions across categories or treatment groups. This plot type supports grouping by categorical variables and allows custom legends to clarify group labels.
+
+2. **Pie Charts (`pieplots`)**  
+   Creates pie charts for categorical variables, providing an intuitive visualization of the distribution across categories. This plot is helpful for understanding the proportion of different categories within the dataset.
+
+3. **Histograms (`floathistograms`)**  
+   Plots histograms for continuous (float) variables, displaying their distribution across bins. Median values are annotated in each plot to provide a summary of the central tendency.
+
+4. **Value Counts (`valuecounts`)**  
+   Produces bar plots showing the count of each unique value in the specified columns, with percentages labeled on the bars. This plot is ideal for categorical variables, offering a clear representation of the frequency distribution.
+
+5. **Fisher’s Exact Test (`fisher_exact_test`)**  
+   Conducts Fisher’s exact test on specified binary factors and outputs a scatter plot with odds ratios and p-values. Significant associations are highlighted, with p-values and odds ratios clearly labeled, aiding in the identification of potentially important relationships between factors.
+
+---
+</details>
+
