@@ -1,0 +1,12 @@
+numpy
+pandas
+scikit-learn
+scikit-survival>=0.21.0
+matplotlib==3.7.0
+lifelines
+seaborn
+tqdm
+scikit-optimize
+fuc
+pyoncoprint
+pyqt5
