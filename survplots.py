@@ -166,10 +166,12 @@ if __name__ == '__main__':
     parser.add_argument('--custom_legend', help="Path to json file with custom legends for KM plots", type=str, default=None)
     parser.add_argument("--filter_nan_columns", help="comma separated list of columns where NaN will be detected and filetered", default="")
     parser.add_argument("--title", help="Title of plot", type=str, default="")
+    parser.add_argument("--tiff", help="If set, plots will be saved in tiff format", default=False, action='store_true')
     args = parser.parse_args()
     input_csv = args.input_csv
 
     status_col = args.status_col
+    tiff_dpi = 100
     survival_time_col = args.survival_time_col
     patient_id_col = args.patient_id_col
     show = args.show
@@ -250,18 +252,26 @@ if __name__ == '__main__':
             try:
                 fig = plot_kaplan_meier(df_filtered, col, status_col, survival_time_col, legend_dict=legend_dict)
                 pp.savefig(fig)
+                if args.tiff:
+                    fig.savefig(f"{args.output_pdf[:-4]}_{col}.tiff", dpi=tiff_dpi, format='tiff')
             except Exception as e:
                 print(f"Error while plotting kaplan_meier for column {col}: {str(e)}")
                 raise e
     elif plot_type == "pieplots":
         fig, ax = plot_piecharts_of_categorial_variables(df.loc[:,columns])
         pp.savefig(fig)
+        if args.tiff:
+            fig.savefig(f"{args.output_pdf[:-4]}_pieplots.tiff", dpi=tiff_dpi, format='tiff')
     elif plot_type == "floathistograms":
         fig, ax = plot_histograms_of_float_values(df.loc[:,columns])
         pp.savefig(fig)
+        if args.tiff:
+            fig.savefig(f"{args.output_pdf[:-4]}_floathistograms.tiff", dpi=tiff_dpi, format='tiff')
     elif plot_type == "valuecounts":
         fig, ax = plot_value_counts(df, columns)
         pp.savefig(fig)
+        if args.tiff:
+            fig.savefig(f"{args.output_pdf[:-4]}_valuecounts.tiff", dpi=tiff_dpi, format='tiff')
     elif plot_type == "fisher_exact_test":
         columns_prefix = ""
         if args.columns.endswith('*'):
@@ -367,6 +377,8 @@ if __name__ == '__main__':
         plt.title(f'{args.title} Exact Fisher test. ')
         plt.tight_layout()
         pp.savefig(fig)
+        if args.tiff:
+            fig.savefig(f"{args.output_pdf[:-4]}_eft.tiff", dpi=tiff_dpi, format='tiff')
     if show:
         plt.show()
     pp.close()

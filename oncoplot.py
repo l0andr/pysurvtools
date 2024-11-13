@@ -60,6 +60,8 @@ if __name__ == '__main__':
     parser.add_argument("--number_of_genes",type=int,default=20)
     parser.add_argument("--verbose",type=int,default=1)
     parser.add_argument("--title",type=str,default="")
+    parser.add_argument("--tiff", help="If set, plots will be saved in tiff format", default=False, action='store_true')
+    parser.add_argument("--keep_patient_id", help="If yes, keep patients_id, use number otherwise", default=False, action='store_true')
 
     args = parser.parse_args()
     number_of_genes = args.number_of_genes
@@ -70,6 +72,9 @@ if __name__ == '__main__':
     # replace True to 1 and False to 0
     mutation_df = mutation_df.replace(True, 1)
     mutation_df = mutation_df.replace(False, 0)
+    if not args.keep_patient_id:
+        mutation_df['patient_id'] = range(1, len(mutation_df) + 1)
+
     # change type to int for all column started from gene_
     mutation_df = mutation_df.astype({col: 'int' for col in mutation_df.columns if 'gene_' in col})
     if args.list_of_genes != '':
@@ -163,12 +168,14 @@ if __name__ == '__main__':
     else:
         sortmethod = 'default'
     print(sortmethod)
-    op.oncoprint(markers=mutation_markers,gene_sort_method=sortmethod,annotations=annotations, topplot=True, rightplot=True,legend=True,
+    fig,axs=op.oncoprint(markers=mutation_markers,gene_sort_method=sortmethod,annotations=annotations, topplot=True, rightplot=True,legend=True,
                  title=args.title)
     if args.output_file.endswith('.png'):
         plt.savefig(args.output_file)
     if args.show:
         plt.show()
     if args.output_file.endswith('.pdf'):
-        pp.savefig(op)
+        pp.savefig(fig)
         pp.close()
+    if args.tiff:
+        fig.savefig(args.output_file.replace('.pdf','.tiff').replace('.png','.tiff'), dpi=100,format='tiff')

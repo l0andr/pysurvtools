@@ -241,6 +241,7 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument("--filter_nan_columns", help="comma separated list of columns where NaN will be detected and filetered", default="")
     parser.add_argument("--title", help="Title of plot", type=str, default="")
+    parser.add_argument("--tiff", help="If set, plots will be saved in tiff format", default=False,action='store_true')
 
     #if factors are not specified, then all factors will be used
     #if genes are not specified, then all genes will be used
@@ -250,6 +251,7 @@ if __name__ == '__main__':
     show = args.show
     global ALPHA
     ALPHA = 0.1
+    tiff_dpi = 100
     if args.genes is None or args.genes == "":
         genes = None
     else:
@@ -507,6 +509,8 @@ if __name__ == '__main__':
     if args.univar is not None:
         fig,axis = treeplot(df_coomon_uni_factors, df2=None,tit1=title_prefix+'[Univariant analysis]',logplot=True,selected_list_of_factors=multi_factors)
         pp.savefig(fig)
+        if args.tiff:
+            fig.savefig(args.model_report.split('.')[0] + "_uni.tiff", dpi=tiff_dpi, format='tiff')
     if args.show:
         plt.show()
     if args.plot_outcome:
@@ -521,6 +525,8 @@ if __name__ == '__main__':
         cph.check_assumptions(df_formodel, p_value_threshold=0.01)
         fig,axis = treeplot(cph.summary,tit1=f"{title_prefix} n={len(df_formodel.index)}.\n Cox model concordance index: {cph.concordance_index_:.4f}",logplot=True)
         pp.savefig(fig)
+        if args.tiff:
+            fig.savefig(args.model_report.split('.')[0] + "_multi.tiff", dpi=tiff_dpi, format='tiff')
     pp.close()
     if args.show:
         plt.show()
