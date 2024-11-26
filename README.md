@@ -1,4 +1,4 @@
-# pysurvtools (Version: 0.6.0)
+# pysurvtools (Version: 0.6.2)
 A set of Python tools for survival analysis and data preparation for survival analysis.
 
 ## Contents
