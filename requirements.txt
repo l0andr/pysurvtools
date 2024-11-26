@@ -10,3 +10,4 @@ scikit-optimize
 fuc
 pyoncoprint
 pyqt5
+bump2version

@@ -93,6 +93,10 @@ SurvPlots supports a variety of plot types, each tailored for different aspects 
 5. **Fisher’s Exact Test (`fisher_exact_test`)**  
    Conducts Fisher’s exact test on specified binary factors and outputs a scatter plot with odds ratios and p-values. Significant associations are highlighted, with p-values and odds ratios clearly labeled, aiding in the identification of potentially important relationships between factors.
 
+6. **Kruskal-Wallis Test (`kruskal_wallis_test`)**                                                                                                                                                                                                              
+   The Kruskal-Wallis test is a non-parametric method used to determine if there are statistically significant differences between three or more groups. the plot_kruskal_wallis_boxplot
+function generates boxplots for comparing multiple groups based on a continuous variable. It calculates the Kruskal-Wallis H test statistic and displays the p-value on the plot. This test helps in assessing whether there are 
+significant differences in the distribution of a continuous variable across different categories or groups, providing insights into potential relationships or patterns within the data.
 ---
 </details>
 

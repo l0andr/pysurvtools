@@ -1,6 +1,7 @@
 import argparse
 import json
 from copy import deepcopy
+from os.path import split
 from tabnanny import verbose
 
 import matplotlib.pyplot as plt
@@ -13,6 +14,48 @@ from lifelines.statistics import logrank_test
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import fisher_exact
 
+import scipy.stats as stats
+
+def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:str, legend_dict = None,title ="",xlabel = "",ylabel = ""):
+
+    fig, ax = plt.subplots(figsize=(12, 12), nrows=1, ncols=1)
+    values_lists =[]
+    split_list = sorted(df[split_column].unique().tolist())
+    for v in split_list:
+        values_lists.append(df[df[split_column] == v][value_column].values)
+    plt.boxplot(values_lists)
+    ticks_str = []
+    if split_column in legend_dict:
+        for x in split_list:
+            if str(x) in legend_dict[split_column]:
+                ticks_str.append(legend_dict[split_column][str(x)])
+            else:
+                ticks_str.append(str(x))
+    else:
+        ticks_str = [str(x) for x in split_list]
+    plt.xticks(np.arange(1,len(split_list)+1), ticks_str)
+
+    kwht_dft = stats.kruskal(*values_lists)
+
+    if ylabel != "":
+        ylabel_str = ylabel
+    else:
+        ylabel_str = value_column
+    plt.ylabel(ylabel_str)
+    if xlabel != "":
+        xlabel_str = xlabel
+    else:
+        if split_column in legend_dict and 'legend name' in legend_dict[split_column]:
+            xlabel_str = legend_dict[split_column]['legend name']
+        else:
+            xlabel_str = split_column
+    if title != "":
+        title_str = title
+    else:
+        title_str = f"{ylabel_str} and {xlabel_str}"
+    plt.title(title_str + f"\n Kruskal-Wallis H Test p-value: {kwht_dft[1]:.4E}")
+    plt.xlabel(xlabel_str)
+    return fig,ax
 
 def plot_piecharts_of_categorial_variables(df_clean:pd.DataFrame):
     #df_tmp = df_clean.loc[:, ~df_clean.columns.str.contains('date', case=False)]
@@ -145,7 +188,7 @@ def keep_only_specific_columns(df, keep_columns, ignore_columns):
 
 from version import __version__
 if __name__ == '__main__':
-    list_of_plot_types = ["kaplan_meier", "pieplots", "floathistograms", "valuecounts",'fisher_exact_test']
+    list_of_plot_types = ["kaplan_meier", "pieplots", "floathistograms", "valuecounts",'fisher_exact_test','kruskal_wallis_test']
     parser = argparse.ArgumentParser(description=f"Plot figures for survival analysis (ver: {__version__})",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--input_csv", help="Input CSV file", type=str, required=True)
@@ -379,6 +422,15 @@ if __name__ == '__main__':
         pp.savefig(fig)
         if args.tiff:
             fig.savefig(f"{args.output_pdf[:-4]}_eft.tiff", dpi=tiff_dpi, format='tiff')
+    elif plot_type == "kruskal_wallis_test":
+        i = 0
+        for col in columns:
+            i = i + 1
+            fig, ax = plot_kruskal_wallis_boxplot(df, col, survival_time_col, legend_dict=legend_dict)
+            pp.savefig(fig)
+            if args.tiff:
+                fig.savefig(f"{args.output_pdf[:-4]}_kruskal_wallis_test_{col}.tiff", dpi=tiff_dpi, format='tiff')
+
     if show:
         plt.show()
     pp.close()
