@@ -143,10 +143,10 @@ def keep_only_specific_columns(df, keep_columns, ignore_columns):
                       col not in ignore_columns]]
 
 
-
+from version import __version__
 if __name__ == '__main__':
     list_of_plot_types = ["kaplan_meier", "pieplots", "floathistograms", "valuecounts",'fisher_exact_test']
-    parser = argparse.ArgumentParser(description="Plot figres for survival analysis",
+    parser = argparse.ArgumentParser(description=f"Plot figures for survival analysis (ver: {__version__})",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--input_csv", help="Input CSV file", type=str, required=True)
     parser.add_argument("--output_pdf", help="Output file with figures", type=str, required=True)

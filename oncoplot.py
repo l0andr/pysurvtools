@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pyoncoprint
 from matplotlib.backends.backend_pdf import PdfPages
-
+from version import __version__
 
 def convert_int_to_rome_number(value:int):
     if value == 1:
@@ -49,7 +49,7 @@ def annotation_replace_rules(column_name, column_values):
     return column_values
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Tool for creation of oncoplot",
+    parser = argparse.ArgumentParser(description=f"Tool for creation of oncoplot  (ver: {__version__})",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-input_mutation", help="Input file with mutations", type=str, required=True)
     parser.add_argument("-output_file", help="Output pdf file with plot", type=str, required=True)
