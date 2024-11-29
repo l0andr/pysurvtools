@@ -210,3 +210,58 @@ The **pyoncoplot** tool, based on the **pyoncoprint** library ([PubMed link](htt
    The oncoplot can be saved as a PDF (multi-page) or PNG (single image) file, making it easy to incorporate into reports or presentations. The tool also supports interactive viewing with `--show` for detailed examination.
 
 </details>
+
+### Adaptree
+
+`adaptree.py` is a command-line tool designed to facilitate decision tree modeling, preprocessing, and optimization. It provides a flexible way to preprocess data, train decision tree classifiers, and visualize the results using tools like `dtreeviz`. Additionally, the script includes support for hyperparameter optimization through Gaussian process minimization.
+
+#### Key Features
+- **Data Preprocessing**:
+  - Categorical variable renaming and one-hot encoding.
+  - Automatic handling of missing values by median imputation.
+  - Filtering rows based on NaN values in specified columns.
+- **Model Training**:
+  - Decision tree training with configurable hyperparameters like `max_depth`, `min_samples_leaf`, and `ccp_alpha`.
+  - Supports loading and saving models in `.pickle` format.
+- **Hyperparameter Optimization**:
+  - Uses Bayesian optimization to find the best parameters for decision tree models.
+- **Visualization**:
+  - Creates decision tree visualizations using `plot_tree` or `dtreeviz`.
+
+#### Usage Example
+```bash
+python adaptree.py -input_csv data.csv -ycolumn target_column --xcolumns feature1,feature2,feature3 --filter_nan_columns feature1 --output_model tree_model.pkl --verbose 2 --min_weight_fraction_leaf 0.02 --max_depth 10 --criteria entropy
+```
+
+| Option                     | Description                                                                                                            | Type     | Default Value       |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------|----------|---------------------|
+| `-input_csv`               | Path to the input CSV file containing the dataset.                                                                    | `str`    | **Required**        |
+| `--input_delimiter`        | Delimiter for the input file.                                                                                         | `str`    | `","`               |
+| `-ycolumn`                 | Feature that should be predicted (target variable).                                                                   | `str`    | **Required**        |
+| `--xcolumns`               | Comma-separated list of features to be used for splitting branches.                                                   | `str`    | `""`                |
+| `--sort_columns`           | Columns for pre-sorting data before processing.                                                                       | `str`    | `""`                |
+| `--unique_record`          | List of columns to identify unique records.                                                                           | `str`    | `""`                |
+| `--model`                  | Path to a file containing the pre-trained model. If set, only plots will be created.                                  | `str`    | `""`                |
+| `--random_seed`            | Random seed for model training.                                                                                       | `int`    | `1`                 |
+| `--verbose`                | Verbosity level for logging output.                                                                                   | `int`    | `2`                 |
+| `--show`                   | If set, displays plots interactively.                                                                                 | `flag`   | `False`             |
+| `--class_names`            | List of class names for visualization.                                                                                | `str`    | `""`                |
+| `--output_model`           | File path to save the output model.                                                                                    | `str`    | `""`                |
+| `--custom_legend`          | Path to a JSON file with custom legends for plots.                                                                    | `str`    | `None`              |
+| `--min_weight_fraction_leaf` | Minimum weighted fraction of the sum total of weights required at a leaf node.                                       | `float`  | `None`              |
+| `--min_samples_leaf`       | Minimum number of samples required at a leaf node.                                                                    | `int`    | `None`              |
+| `--max_depth`              | Maximum depth of the decision tree.                                                                                   | `int`    | `None`              |
+| `--ccp_alpha`              | Complexity parameter used for Minimal Cost-Complexity Pruning.                                                        | `float`  | `None`              |
+| `--min_impurity_decrease`  | Minimum impurity decrease required for a node split.                                                                  | `float`  | `None`              |
+| `--max_features`           | Number of features to consider for the best split.                                                                    | `int`    | `None`              |
+| `--max_leaf_nodes`         | Maximum number of leaf nodes to grow in best-first fashion.                                                           | `int`    | `None`              |
+| `--min_samples_split`      | Minimum number of samples required to split an internal node.                                                         | `int`    | `None`              |
+| `--criteria`               | Function to measure the quality of a split (`gini` or `entropy`).                                                     | `str`    | `"gini"`            |
+| `--steps_of_optimization`  | Number of steps for hyperparameter optimization.                                                                      | `int`    | `20`                |
+| `--filter_nan_columns`     | Comma-separated list of columns where NaN values will be detected and filtered.                                       | `str`    | `""`                |
+
+
+#### Outputs
+- Trained Model: Saved in .pickle format if specified via --output_model. <br>
+- Visualizations: Decision tree visualizations, including dtreeviz for advanced graphics.<br>
+- Optimization Summary: Outputs the best hyperparameters and their performance during optimization. <br>
