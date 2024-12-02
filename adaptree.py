@@ -135,13 +135,13 @@ if __name__ == '__main__':
     parser.add_argument("--min_samples_split", help="The minimum number of samples required to split an internal node", type=int, default=None)
     parser.add_argument("--criteria", help="The function to measure the quality of a split", type=str,
                         choices=['entropy', 'gini'], default='gini')
-
+    parser.add_argument("--plot_type", help="Type of plot", choices=list_of_plot_types, default="simple")
     #parameters related to hyperparameter optimization
     parser.add_argument("--steps_of_optimization", help="Number of steps for optimization", type=int, default=20)
     parser.add_argument("--filter_nan_columns", help="comma separated list of columns where NaN will be detected and filetered", default="")
 
     args = parser.parse_args()
-    plot_type = 'dtreeviz'
+    plot_type = args.plot_type
     legend_dict = {}
     if args.custom_legend is not None:
         with open(args.custom_legend, 'r') as f:
@@ -359,7 +359,8 @@ if __name__ == '__main__':
                                        feature_names=X.columns,
                                        target_name='response', class_names=class_names)
             v = viz_model.view(fontname='monospace',fancy=False,title=title)  # render as SVG into internal object
-            v.show()
+            if args.show:
+                v.show()
 
     except Exception as e:
         print(class_names)
@@ -373,6 +374,6 @@ if __name__ == '__main__':
     #plot_convergence(res_gp)
     warnings.resetwarnings()
 
-    #if args.show:
-    #    plt.show()
+    if args.show:
+        plt.show()
 
