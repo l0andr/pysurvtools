@@ -77,6 +77,42 @@ def categorical_parameters_to_bool(df_formodel: pd.DataFrame, except_columns: li
     df_formodel.drop(columns=column_for_dropping, inplace=True)
     return df_formodel
 
+
+def calculate_leaf_purity(model, X, data_y):
+    # Get the tree structure
+    tree = model.tree_
+
+    # Initialize a list to store purity values
+    purity_values = []
+    class_counts_values = []
+    # Iterate over all leaves
+    for leaf_index in range(tree.node_count):
+        # Check if the node is a leaf
+        if tree.children_left[leaf_index] == tree.children_right[leaf_index]:  # Leaf node condition
+            # Get the indices of the samples that reach this leaf
+            samples_indices = np.where(model.apply(X) == leaf_index)[0]
+            if len(samples_indices) > 0:
+                # Get the class labels for these samples
+                if isinstance(data_y, np.ndarray):
+                    labels = data_y[samples_indices]  # For NumPy array
+                else:
+                    labels = data_y.iloc[samples_indices].values
+
+                # Calculate purity (Gini impurity)
+                class_counts = np.bincount(labels)
+                probabilities = class_counts / len(labels)
+                gini_impurity = 1 - np.sum(probabilities ** 2)
+
+                # Append the purity value
+                purity_values.append(gini_impurity)
+                class_counts_values.append(class_counts)
+            else:
+                # If no samples reach this leaf, append None or a default value
+                purity_values.append(None)
+                class_counts_values.append(None)
+
+    return purity_values,class_counts_values
+
 def decision_tree_hyper_parameter_grid_search(X, data_y, min_weight_fraction_leaf, ccp_alpha, min_samples_leaf, max_depth,
                                          criterion='entropy',optimized_parameter="min_weight_fraction_leaf",min_value=0.01,max_value=0.1,npoint=10):
     td_acc = []
@@ -115,7 +151,7 @@ if __name__ == '__main__':
     parser.add_argument("--sort_columns", help="Columns for pre-sort data before processing", type=str, default="")
     parser.add_argument("--unique_record", help="List of columns to identify unique records", type=str, default="")
     parser.add_argument("--model", help="File containing model, if set only plots will be created", type=str, default="")
-    parser.add_argument("--random_seed", help="Random seed for model", type=int, default=1)
+    parser.add_argument("--random_seed", help="Random seed for model", type=int, default=None)
     #parameters related to output
     parser.add_argument("--verbose", help="Verbose level", type=int, default=2)
     parser.add_argument("--show", help="If set, plots will be shown", default=False,
@@ -136,6 +172,7 @@ if __name__ == '__main__':
     parser.add_argument("--criteria", help="The function to measure the quality of a split", type=str,
                         choices=['entropy', 'gini'], default='gini')
     parser.add_argument("--plot_type", help="Type of plot", choices=list_of_plot_types, default="simple")
+    parser.add_argument("--tiff", help="tiff file name for output plot", choices=list_of_plot_types, default="")
     #parameters related to hyperparameter optimization
     parser.add_argument("--steps_of_optimization", help="Number of steps for optimization", type=int, default=20)
     parser.add_argument("--filter_nan_columns", help="comma separated list of columns where NaN will be detected and filetered", default="")
@@ -237,9 +274,21 @@ if __name__ == '__main__':
          'min_impurity_decrease':args.min_impurity_decrease,
          'max_features':args.max_features,
          'max_leaf_nodes':args.max_leaf_nodes,
-         'min_samples_split':args.min_samples_split}
+         'min_samples_split':args.min_samples_split,
+         'random_state':args.random_seed,
+         'splitter':'best'}
 
-        list_of_int_parameters = ['max_depth','min_samples_leaf','max_features','max_leaf_nodes','min_samples_split']
+        params_dict_max = {'max_depth': 15,
+                       'min_samples_leaf': 30,
+                       'min_weight_fraction_leaf': 0.1,
+                       'ccp_alpha': 0.1,
+                       'min_impurity_decrease': 0.1,
+                       'max_features': 40,
+                       'max_leaf_nodes': 40,
+                       'min_samples_split': 30,
+                       'random_state': 10}
+
+        list_of_int_parameters = ['max_depth','min_samples_leaf','max_features','max_leaf_nodes','min_samples_split','random_state']
         list_of_real_parameters = ['min_weight_fraction_leaf','ccp_alpha','min_impurity_decrease']
         space = []
         list_of_parameters_for_optimization = []
@@ -247,13 +296,15 @@ if __name__ == '__main__':
         for key,value in params_dict.items():
             if value is None:
                 if key in list_of_int_parameters:
-                    space.append(Integer(2, 30, name=key))
+                    v = params_dict_max[key]
+                    space.append(Integer(2, v, name=key))
                     if args.verbose > 0:
-                        print(f"Parameter {key} subjected for optimization in range 2-30")
+                        print(f"Parameter {key} subjected for optimization in range 2-{v}")
                 elif key in list_of_real_parameters:
-                    space.append(Real(0.000001, 0.5, name=key))
+                    v = params_dict_max[key]
+                    space.append(Real(0.0001, v, name=key))
                     if args.verbose > 0:
-                        print(f"Parameter {key} subjected for optimization in range 0.000001-0.5")
+                        print(f"Parameter {key} subjected for optimization in range 0.0001-0.5")
                 else:
                     raise Exception(f"Unknown parameter type for {key}")
                 list_of_parameters_for_optimization.append(key)
@@ -262,13 +313,49 @@ if __name__ == '__main__':
 
         @use_named_args(space)
         def objective1(**params):
+            model = DecisionTreeClassifier(**params,**dictionary_of_fixed_parameters,
+                                           criterion=criterium).fit(X, data_y)
+
+            return -model.score(X, data_y)
+
+        @use_named_args(space)
+        def objective_mean(**params):
             ms = 0
-            for n in range(0,11):
-                model = DecisionTreeClassifier(**params,**dictionary_of_fixed_parameters,
-                                           criterion=criterium,random_state=n).fit(X, data_y)
+            for n in range(0, 11):
+                model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
+                                               criterion=criterium, random_state=n).fit(X, data_y)
                 ms = ms + model.score(X, data_y)
             ms = ms / 11 * -1
             return ms
+
+        @use_named_args(space)
+        def objective_max(**params):
+            ms = 0
+            for n in range(0, 11):
+                model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
+                                               criterion=criterium, random_state=n).fit(X, data_y)
+                if model.score(X, data_y) > ms:
+                    ms = model.score(X, data_y)
+            return -ms
+
+        @use_named_args(space)
+        def objective_max_mean_purity(**params):
+            model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
+                                               criterion=criterium).fit(X, data_y)
+            purity,cc = calculate_leaf_purity(model, X, data_y)
+            return sum(purity)/len(purity) #-model.score(X, data_y)/5
+
+        @use_named_args(space)
+        def objective_max_weighted_purity(**params):
+            model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
+                                               criterion=criterium).fit(X, data_y)
+            purity,cc = calculate_leaf_purity(model, X, data_y)
+            for i in range(0,len(purity)):
+                purity[i] = purity[i]**2 * sum(cc[i])
+            return sum(purity)
+
+
+
 
         optimization_verbose = False
         if verbose > 1:
@@ -276,7 +363,7 @@ if __name__ == '__main__':
         callback = []
         if verbose == 1:
             callback = [tqdm_skopt(total=args.steps_of_optimization, desc="Gaussian Process")]
-        res_gp = gp_minimize(objective1, space, n_calls=args.steps_of_optimization, verbose = optimization_verbose, random_state=0,n_jobs=-1,
+        res_gp = gp_minimize(objective_max_mean_purity, space, n_calls=args.steps_of_optimization, verbose = optimization_verbose, random_state=0,n_jobs=-1,
                              callback=callback)
 
         print("Results of optimization:")
@@ -287,8 +374,21 @@ if __name__ == '__main__':
             dictionary_of_optimised_parameters[list_of_parameters_for_optimization[i]] = res_gp.x[i]
         from skopt.plots import plot_convergence
         joint_params_dict = {**dictionary_of_optimised_parameters,**dictionary_of_fixed_parameters}
+        random_seed = args.random_seed
+        if verbose >= 1:
+            print(f"Optimized parameters:{joint_params_dict}")
+        if random_seed is None:
+            if 'random_state' in joint_params_dict:
+                random_seed = joint_params_dict['random_state']
+            else:
+                random_seed = 0
+            #exclude random_state from joint_params_dict
+        if 'random_state' in joint_params_dict:
+            if verbose > 0:
+                print(f"Optimized random seed was set to {random_seed}")
+            joint_params_dict.pop('random_state')
         model = DecisionTreeClassifier(**joint_params_dict,
-                                       criterion=criterium,random_state=args.random_seed).fit(X, data_y)
+                                       criterion=criterium,random_state=random_seed).fit(X, data_y)
 
         #permutation importance
         from sklearn.inspection import permutation_importance
@@ -314,6 +414,8 @@ if __name__ == '__main__':
         model = DecisionTreeClassifier(**joint_params_dict,
                                        criterion=criterium,random_state=args.random_seed).fit(X, data_y)
         #save model using pickle
+        plt.figure(figsize=(20, 10))
+        plot_convergence(res_gp)
         with open(output_name, 'wb') as f:
             pickle.dump(model, f)
     else:
@@ -323,9 +425,19 @@ if __name__ == '__main__':
         joint_params_dict = {}
         for key in ['ccp_alpha','min_samples_leaf','max_depth','min_weight_fraction_leaf','max_features','max_leaf_nodes','min_samples_split']:
             joint_params_dict[key] = model.get_params()[key]
+        random_seed = args.random_seed
+        if random_seed is None:
+            if 'random_state' in joint_params_dict:
+                random_seed = joint_params_dict['random_state']
+            else:
+                random_seed = 0
+            # exclude random_state from joint_params_dict
+            if 'random_state' in joint_params_dict:
+                joint_params_dict.pop('random_state')
         model = DecisionTreeClassifier(**joint_params_dict,
-                                       criterion=criterium,random_state=args.random_seed).fit(X, data_y)
-
+                                       criterion=criterium,random_state=random_seed).fit(X, data_y)
+        tmp = calculate_leaf_purity(model, X, data_y)
+        print(tmp)
     if verbose > 0:
         print(f"Model accuracy on train data:{model.score(X, data_y)}")
         scores = cross_val_score(model, X, data_y, cv=5)
@@ -351,16 +463,9 @@ if __name__ == '__main__':
                                        X_train=X.values, y_train=data_y,
                                        feature_names=X.columns,
                                        target_name='response', class_names=class_names)
-            v = viz_model.view(fontname='monospace',title=title,)  # render as SVG into internal object
+            v = viz_model.view(fontname='monospace',title=title,fancy=True)  # render as SVG into internal object
             v.show()
-        elif plot_type == 'dtreeviz_simple':
-            viz_model = dtreeviz.model(model,
-                                       X_train=X.values, y_train=data_y,
-                                       feature_names=X.columns,
-                                       target_name='response', class_names=class_names)
-            v = viz_model.view(fontname='monospace',fancy=False,title=title)  # render as SVG into internal object
-            if args.show:
-                v.show()
+            v.save(f"dtreeviz_{joint_params_dict['ccp_alpha']:.4f}_{joint_params_dict['min_samples_leaf']}_{joint_params_dict['max_depth']}_{joint_params_dict['min_weight_fraction_leaf']:.2f}.tiff",format='tiff')
 
     except Exception as e:
         print(class_names)
@@ -369,9 +474,6 @@ if __name__ == '__main__':
         print(f"Error during plotting tree: {e}")
         raise e
 
-
-    #plt.figure(figsize=(20, 10))
-    #plot_convergence(res_gp)
     warnings.resetwarnings()
 
     if args.show:
