@@ -172,7 +172,7 @@ if __name__ == '__main__':
     parser.add_argument("--criteria", help="The function to measure the quality of a split", type=str,
                         choices=['entropy', 'gini'], default='gini')
     parser.add_argument("--plot_type", help="Type of plot", choices=list_of_plot_types, default="simple")
-    parser.add_argument("--tiff", help="tiff file name for output plot", choices=list_of_plot_types, default="")
+    parser.add_argument("--tiff", help="tiff file name for output plot", type=str, default="")
     #parameters related to hyperparameter optimization
     parser.add_argument("--steps_of_optimization", help="Number of steps for optimization", type=int, default=20)
     parser.add_argument("--filter_nan_columns", help="comma separated list of columns where NaN will be detected and filetered", default="")
@@ -414,8 +414,11 @@ if __name__ == '__main__':
         model = DecisionTreeClassifier(**joint_params_dict,
                                        criterion=criterium,random_state=args.random_seed).fit(X, data_y)
         #save model using pickle
-        plt.figure(figsize=(20, 10))
+        fig = plt.figure(figsize=(20, 10))
         plot_convergence(res_gp)
+        if args.tiff != "":
+            convergence_filename = args.tiff.replace('.tiff','_convergence.tiff')
+            fig.savefig(convergence_filename,format='tiff')
         with open(output_name, 'wb') as f:
             pickle.dump(model, f)
     else:
@@ -436,8 +439,6 @@ if __name__ == '__main__':
                 joint_params_dict.pop('random_state')
         model = DecisionTreeClassifier(**joint_params_dict,
                                        criterion=criterium,random_state=random_seed).fit(X, data_y)
-        tmp = calculate_leaf_purity(model, X, data_y)
-        print(tmp)
     if verbose > 0:
         print(f"Model accuracy on train data:{model.score(X, data_y)}")
         scores = cross_val_score(model, X, data_y, cv=5)
@@ -456,6 +457,9 @@ if __name__ == '__main__':
             plot_tree(model, feature_names=X.columns, filled=True, fontsize=10,class_names=class_names,proportion=True, label='all',impurity=True)
             plt.tight_layout()
             plt.title(title)
+            if args.tiff != "":
+                plt.savefig(args.tiff,format='tiff')
+
         elif plot_type == 'dtreeviz':
             #in all columns with name starting from "gene_", replace values 0 and 1 to wildtype and mutated
 
@@ -465,7 +469,19 @@ if __name__ == '__main__':
                                        target_name='response', class_names=class_names)
             v = viz_model.view(fontname='monospace',title=title,fancy=True)  # render as SVG into internal object
             v.show()
-            v.save(f"dtreeviz_{joint_params_dict['ccp_alpha']:.4f}_{joint_params_dict['min_samples_leaf']}_{joint_params_dict['max_depth']}_{joint_params_dict['min_weight_fraction_leaf']:.2f}.tiff",format='tiff')
+            if args.tiff != "":
+                svg_filename = args.tiff.replace('.tiff','.svg')
+                if '.svg' not in svg_filename:
+                    svg_filename = svg_filename + '.svg'
+                v.save(svg_filename)
+                #check if libvips.so installed
+
+                try:
+                    import pyvips
+                    image = pyvips.Image.new_from_file(svg_filename, dpi=300)
+                    image.write_to_file(args.tiff)
+                except Exception as e:
+                    print(f"Error during conversion svg to tiff, perhaps not all libraries installed: {e}")
 
     except Exception as e:
         print(class_names)

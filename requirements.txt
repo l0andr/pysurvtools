@@ -12,3 +12,4 @@ pyoncoprint
 pyqt5
 bump2version
 dtreeviz
+pyvips
