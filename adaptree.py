@@ -277,15 +277,17 @@ if __name__ == '__main__':
          'min_samples_split':args.min_samples_split,
          'random_state':args.random_seed,
          'splitter':'best'}
-
-        params_dict_max = {'max_depth': 15,
+        min_samples_leaf = args.min_samples_leaf
+        if min_samples_leaf is None:
+            min_samples_leaf = 1
+        params_dict_max = {'max_depth': len(X.columns),
                        'min_samples_leaf': 30,
-                       'min_weight_fraction_leaf': 0.1,
+                       'min_weight_fraction_leaf': 0.5,
                        'ccp_alpha': 0.1,
                        'min_impurity_decrease': 0.1,
-                       'max_features': 40,
-                       'max_leaf_nodes': 40,
-                       'min_samples_split': 30,
+                       'max_features': len(X.columns),
+                       'max_leaf_nodes': int(len(X.index)/min_samples_leaf),
+                       'min_samples_split': len(X.index),
                        'random_state': 10}
 
         list_of_int_parameters = ['max_depth','min_samples_leaf','max_features','max_leaf_nodes','min_samples_split','random_state']
@@ -339,11 +341,41 @@ if __name__ == '__main__':
             return -ms
 
         @use_named_args(space)
-        def objective_max_mean_purity(**params):
+        def objective_max_average_purity(**params):
             model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
                                                criterion=criterium).fit(X, data_y)
             purity,cc = calculate_leaf_purity(model, X, data_y)
             return sum(purity)/len(purity) #-model.score(X, data_y)/5
+
+
+        @use_named_args(space)
+        def objective_minmax_purity(**params):
+            #maximization of number of samples in total pure leafs
+            model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
+                                           criterion=criterium).fit(X, data_y)
+            purity, cc = calculate_leaf_purity(model, X, data_y)
+            total_samples = len(data_y)
+            samples_in_pure_leafs = 0
+            for i in range(0,len(purity)):
+                samples_in_pure_leafs += sum(cc[i]) * (1/(purity[i]+0.1))
+
+            return -samples_in_pure_leafs/total_samples
+
+
+        @use_named_args(space)
+        def objective_max_average_purity_in_average(**params):
+            av_purity = 0
+            for rv in range(0,11):
+                if 'random_state' in params:
+                    params.pop('random_state')
+                if 'random_state' in dictionary_of_fixed_parameters:
+                    dictionary_of_fixed_parameters.pop('random_state')
+                model = DecisionTreeClassifier(**params, **dictionary_of_fixed_parameters,
+                                               criterion=criterium,random_state=rv).fit(X, data_y)
+                purity,cc = calculate_leaf_purity(model, X, data_y)
+                av_purity += sum(purity)/len(purity)
+            return av_purity/10
+
 
         @use_named_args(space)
         def objective_max_weighted_purity(**params):
@@ -363,7 +395,7 @@ if __name__ == '__main__':
         callback = []
         if verbose == 1:
             callback = [tqdm_skopt(total=args.steps_of_optimization, desc="Gaussian Process")]
-        res_gp = gp_minimize(objective_max_mean_purity, space, n_calls=args.steps_of_optimization, verbose = optimization_verbose, random_state=0,n_jobs=-1,
+        res_gp = gp_minimize(objective_minmax_purity, space, n_calls=args.steps_of_optimization, verbose = optimization_verbose, random_state=0,n_jobs=-1,
                              callback=callback)
 
         print("Results of optimization:")
@@ -445,7 +477,9 @@ if __name__ == '__main__':
         print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
 
     title = f"Decision tree with ccp_alpha={joint_params_dict['ccp_alpha']}, min_samples_leaf={joint_params_dict['min_samples_leaf']}, max_depth={joint_params_dict['max_depth']}, " \
-            f"min_weight_fraction_leaf={joint_params_dict['min_weight_fraction_leaf']}, max_features={joint_params_dict['max_features']}"
+            f"min_weight_fraction_leaf={joint_params_dict['min_weight_fraction_leaf']}, max_features={joint_params_dict['max_features']}," \
+            f"max_leaf_nodes={joint_params_dict['max_leaf_nodes']}, min_samples_split={joint_params_dict['min_samples_split']}"
+
     title += f"\nModel score on train data:{model.score(X, data_y)}\n"
     title += f"Cross validated accuracy {scores.mean():.2f}  with a standard deviation of {scores.std():.2f}"
     try:
