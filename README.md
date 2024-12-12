@@ -1,5 +1,5 @@
 # pysurvtools (Version: 0.6.2)
-A set of Python tools for survival analysis and data preparation for survival analysis.
+A set of Python CLI tools for clnical data preparation, survival analysis and modeling.
 <table>
    <tr>
       <td align="center">
