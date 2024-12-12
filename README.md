@@ -107,9 +107,6 @@ significant differences in the distribution of a continuous variable across diff
       <td>
          <img src= "img/cox_analysis_exmp1.png" >
       </td>
-      <td>
-         <img src= "img/cox_analysis_exmp2.png" >
-      </td>
    </tr>
 </table>
 
@@ -212,6 +209,16 @@ The **pyoncoplot** tool, based on the **pyoncoprint** library ([PubMed link](htt
 </details>
 
 ### Adaptree
+
+
+<table>
+   <tr>
+      <td>
+         <img src= "img/deciontree_exmp.tiff" >
+      </td>
+   </tr>
+</table>
+
 
 `adaptree.py` is a command-line tool designed to facilitate decision tree modeling, preprocessing, and optimization. It provides a flexible way to preprocess data, train decision tree classifiers, and visualize the results using tools like `dtreeviz`. Additionally, the script includes support for hyperparameter optimization through Gaussian process minimization.
 

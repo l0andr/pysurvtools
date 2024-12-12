@@ -17,7 +17,6 @@ from scipy.stats import fisher_exact
 import scipy.stats as stats
 
 def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:str, legend_dict = None,title ="",xlabel = "",ylabel = ""):
-
     fig, ax = plt.subplots(figsize=(12, 12), nrows=1, ncols=1)
     values_lists =[]
     split_list = sorted(df[split_column].unique().tolist())
