@@ -2,8 +2,8 @@
 A set of Python tools for survival analysis and data preparation for survival analysis.
 <table>
    <tr>
-      <td align=center>
-         <img src= "img/intro_img.png" width="500" align=center>
+      <td align="center">
+         <img src= "img/intro_img.png" align="center">
       </td>
    </tr>
 </table>
