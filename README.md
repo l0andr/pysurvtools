@@ -1,6 +1,12 @@
 # pysurvtools (Version: 0.6.2)
 A set of Python tools for survival analysis and data preparation for survival analysis.
-
+<table>
+   <tr>
+      <td>
+         <img src= "img/intro_img.png" width="500">
+      </td>
+   </tr>
+</table>
 ## Contents
 
 * <b>survplots.py</b> - visualization and analysis tool built using the lifelines library for survival analysis (Davidson-Pilon, 2019). It provides easy-to-generate plots and analyses for exploring survival data, including Kaplan-Meier survival curves, value counts, histograms, boxplots with results of Kruskal-Wallis Test and Fisher's exact tests to assess relationships between binary factors and outcomes. The tool supports custom legends, data pre-filtering, and group size adjustments, making it highly adaptable for large survival studies. Outputs include various plot types and summaries that are automatically compiled into a PDF report, offering a streamlined workflow for robust survival analysis and reporting. <br>
