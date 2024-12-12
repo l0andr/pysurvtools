@@ -6,7 +6,7 @@ A set of Python tools for survival analysis and data preparation for survival an
 * <b>survplots.py</b> - visualization and analysis tool built using the lifelines library for survival analysis (Davidson-Pilon, 2019). It provides easy-to-generate plots and analyses for exploring survival data, including Kaplan-Meier survival curves, value counts, histograms, boxplots with results of Kruskal-Wallis Test and Fisher's exact tests to assess relationships between binary factors and outcomes. The tool supports custom legends, data pre-filtering, and group size adjustments, making it highly adaptable for large survival studies. Outputs include various plot types and summaries that are automatically compiled into a PDF report, offering a streamlined workflow for robust survival analysis and reporting. <br>
 * <b>cox-analysis.py</b> - tool, built around the lifelines library for survival analysis (Davidson-Pilon, 2019), performs survival prediction using the Cox Proportional Hazards model with support for penalization parameter tuning. The tool allows for a comprehensive analysis pipeline, including grid search optimization of penalization parameters (L1/L2 ratio) and univariate analysis to identify significant predictors. Model quality is evaluated through metrics like concordance index, log-likelihood, log-rank test, AIC, and survival probability calibration. This tool outputs detailed visual reports and summaries of significant factors influencing survival, as well as model performance plots, and can generate tailored PDF reports for streamlined survival analysis interpretation. <br>
 * <b>oncoplot.py</b> -  tool is a wrapper around the pyoncoprint library (https://pubmed.ncbi.nlm.nih.gov/37037472/), designed to create customizable oncoprints for mutation data visualization. It enables users to specify genes and clinical factors of interest, with options for gene sorting and detailed annotations, including stage formatting in Roman numerals and response classifications. This tool provides flexibility for mutation markers and color-coded clinical annotations, and outputs can be saved as PDF or PNG.  <br>
-
+* <b>adaptree.py</b> tool to construct and optimize a decision tree for analyzing treatment outcomes based on clinical data. The tool's primary feature—Bayesian hyperparameter optimization—was applied to maximize the average leaf purity, ensuring that the resulting tree effectively split cases into subgroups predominantly containing either "Good" or "Bad" responses on treatment. Also additional constraints can be set, for example constraints on minimal leaf size i.e. minimal size of subgroups that will be taken into account <br>
 ## Instalation
 
 ### Pre-requirements
@@ -214,14 +214,15 @@ The **pyoncoplot** tool, based on the **pyoncoprint** library ([PubMed link](htt
 <table>
    <tr>
       <td>
-         <img src= "img/deciontree_exmp.tiff" >
+         <img src= "img/deciontree_exmp.png" >
       </td>
    </tr>
 </table>
 
 
 `adaptree.py` is a command-line tool designed to facilitate decision tree modeling, preprocessing, and optimization. It provides a flexible way to preprocess data, train decision tree classifiers, and visualize the results using tools like `dtreeviz`. Additionally, the script includes support for hyperparameter optimization through Gaussian process minimization.
-
+<details>
+     <summary>Parameters and options of adaptree</summary>
 #### Key Features
 - **Data Preprocessing**:
   - Categorical variable renaming and one-hot encoding.
@@ -239,7 +240,6 @@ The **pyoncoplot** tool, based on the **pyoncoprint** library ([PubMed link](htt
 ```bash
 python adaptree.py -input_csv data.csv -ycolumn target_column --xcolumns feature1,feature2,feature3 --filter_nan_columns feature1 --output_model tree_model.pkl --verbose 2 --min_weight_fraction_leaf 0.02 --max_depth 10 --criteria entropy
 ```
-
 | Option                     | Description                                                                                                            | Type     | Default Value       |
 |----------------------------|------------------------------------------------------------------------------------------------------------------------|----------|---------------------|
 | `-input_csv`               | Path to the input CSV file containing the dataset.                                                                    | `str`    | **Required**        |
@@ -249,7 +249,7 @@ python adaptree.py -input_csv data.csv -ycolumn target_column --xcolumns feature
 | `--sort_columns`           | Columns for pre-sorting data before processing.                                                                       | `str`    | `""`                |
 | `--unique_record`          | List of columns to identify unique records.                                                                           | `str`    | `""`                |
 | `--model`                  | Path to a file containing the pre-trained model. If set, only plots will be created.                                  | `str`    | `""`                |
-| `--random_seed`            | Random seed for model training.                                                                                       | `int`    | `1`                 |
+| `--random_seed`            | Random seed for model training.                                                                                       | `int`    | `None`              |
 | `--verbose`                | Verbosity level for logging output.                                                                                   | `int`    | `2`                 |
 | `--show`                   | If set, displays plots interactively.                                                                                 | `flag`   | `False`             |
 | `--class_names`            | List of class names for visualization.                                                                                | `str`    | `""`                |
@@ -264,6 +264,8 @@ python adaptree.py -input_csv data.csv -ycolumn target_column --xcolumns feature
 | `--max_leaf_nodes`         | Maximum number of leaf nodes to grow in best-first fashion.                                                           | `int`    | `None`              |
 | `--min_samples_split`      | Minimum number of samples required to split an internal node.                                                         | `int`    | `None`              |
 | `--criteria`               | Function to measure the quality of a split (`gini` or `entropy`).                                                     | `str`    | `"gini"`            |
+| `--plot_type`              | Type of plot to generate (`simple`, `simple_full`, or `dtreeviz`).                                                    | `str`    | `"simple"`          |
+| `--tiff`                   | File name for the output plot in TIFF format.                                                                         | `str`    | `""`                |
 | `--steps_of_optimization`  | Number of steps for hyperparameter optimization.                                                                      | `int`    | `20`                |
 | `--filter_nan_columns`     | Comma-separated list of columns where NaN values will be detected and filtered.                                       | `str`    | `""`                |
 
@@ -272,3 +274,4 @@ python adaptree.py -input_csv data.csv -ycolumn target_column --xcolumns feature
 - Trained Model: Saved in .pickle format if specified via --output_model. <br>
 - Visualizations: Decision tree visualizations, including dtreeviz for advanced graphics.<br>
 - Optimization Summary: Outputs the best hyperparameters and their performance during optimization. <br>
+</details>
