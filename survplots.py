@@ -16,13 +16,17 @@ from scipy.stats import fisher_exact
 
 import scipy.stats as stats
 
-def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:str, legend_dict = None,title ="",xlabel = "",ylabel = ""):
+def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:str, legend_dict ={},title ="",xlabel = "",ylabel = "", fontsize=14):
     fig, ax = plt.subplots(figsize=(12, 12), nrows=1, ncols=1)
     values_lists =[]
     split_list = sorted(df[split_column].unique().tolist())
     for v in split_list:
         values_lists.append(df[df[split_column] == v][value_column].values)
-    plt.boxplot(values_lists)
+    
+    # Create boxplot
+    bp = plt.boxplot(values_lists)
+    
+    # Set x-axis labels
     ticks_str = []
     if split_column in legend_dict:
         for x in split_list:
@@ -32,15 +36,74 @@ def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:
                 ticks_str.append(str(x))
     else:
         ticks_str = [str(x) for x in split_list]
-    plt.xticks(np.arange(1,len(split_list)+1), ticks_str)
+    plt.xticks(np.arange(1,len(split_list)+1), ticks_str, fontsize=fontsize)
 
+    # Perform Kruskal-Wallis H test
     kwht_dft = stats.kruskal(*values_lists)
+    
+    # Perform pairwise Mann-Whitney U tests
+    pairwise_pvalues = {}
+    n_groups = len(split_list)
+    
+    for i in range(n_groups):
+        for j in range(i+1, n_groups):
+            group1_name = str(split_list[i])
+            group2_name = str(split_list[j])
+            pair_key = f"{group1_name}_vs_{group2_name}"
+            
+            # Perform Mann-Whitney U test
+            try:
+                stat, p_value = stats.mannwhitneyu(values_lists[i], values_lists[j], 
+                                                 alternative='two-sided')
+                pairwise_pvalues[pair_key] = p_value
+            except ValueError:
+                # Handle cases where one group has all identical values
+                pairwise_pvalues[pair_key] = 1.0
 
+    # Add significance indicators on the plot
+    y_max = max([max(vals) for vals in values_lists if len(vals) > 0])
+    y_min = min([min(vals) for vals in values_lists if len(vals) > 0])
+    y_range = y_max - y_min
+    
+    # Define significance levels
+    sig_levels = [0.001, 0.01, 0.05]
+    sig_symbols = ['***', '**', '*']
+    
+    # Plot significance bars
+    bar_height = y_range * 0.05
+    current_y = y_max + y_range * 0.1
+    
+    for pair_key, p_value in pairwise_pvalues.items():
+        group1, group2 = pair_key.split('_vs_')
+        idx1 = split_list.index(float(group1) if group1.replace('.', '').replace('-', '').isdigit() else group1)
+        idx2 = split_list.index(float(group2) if group2.replace('.', '').replace('-', '').isdigit() else group2)
+        
+        # Determine significance symbol
+        sig_symbol = ''
+        for level, symbol in zip(sig_levels, sig_symbols):
+            if p_value < level:
+                sig_symbol = symbol
+                break
+        
+        if sig_symbol:
+            # Draw significance bar
+            x1, x2 = idx1 + 1, idx2 + 1
+            plt.plot([x1, x1, x2, x2], [current_y, current_y + bar_height, current_y + bar_height, current_y], 
+                    'k-', linewidth=1)
+            
+            # Add significance symbol and p-value
+            symbol_text = f"{sig_symbol}\np={p_value:.4E}"
+            plt.text((x1 + x2) / 2, current_y + bar_height + y_range * 0.01, symbol_text, 
+                    ha='center', va='bottom', fontsize=fontsize-2, fontweight='bold')
+            current_y += y_range * 0.2
+
+    # Set labels and title
     if ylabel != "":
         ylabel_str = ylabel
     else:
         ylabel_str = value_column
-    plt.ylabel(ylabel_str)
+    plt.ylabel(ylabel_str, fontsize=fontsize)
+    
     if xlabel != "":
         xlabel_str = xlabel
     else:
@@ -48,13 +111,25 @@ def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:
             xlabel_str = legend_dict[split_column]['legend name']
         else:
             xlabel_str = split_column
+    
     if title != "":
         title_str = title
     else:
         title_str = f"{ylabel_str} and {xlabel_str}"
-    plt.title(title_str + f"\n Kruskal-Wallis H Test p-value: {kwht_dft[1]:.4E}")
-    plt.xlabel(xlabel_str)
-    return fig,ax
+    
+    # Create title with only Kruskal-Wallis p-value
+    title_with_pvalues = title_str + f"\nKruskal-Wallis H Test p-value: {kwht_dft[1]:.4E}"
+    
+    plt.title(title_with_pvalues, fontsize=fontsize)
+    plt.xlabel(xlabel_str, fontsize=fontsize)
+    
+    # Set y-axis tick label fontsize
+    plt.yticks(fontsize=fontsize)
+    
+    # Adjust y-axis limits to accommodate significance bars
+    plt.ylim(y_min - y_range * 0.1, current_y + y_range * 0.1)
+    plt.tight_layout()
+    return fig, ax
 
 def plot_piecharts_of_categorial_variables(df_clean:pd.DataFrame):
     #df_tmp = df_clean.loc[:, ~df_clean.columns.str.contains('date', case=False)]
