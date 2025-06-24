@@ -1,12 +1,13 @@
 # pysurvtools (Version: 0.6.2)
-A set of Python tools for survival analysis and data preparation for survival analysis.
+A set of Python CLI tools for clnical data preparation, survival analysis and modeling.
 <table>
    <tr>
-      <td>
-         <img src= "img/intro_img.png" width="500">
+      <td align="center">
+         <img src= "img/intro_img.png" align="center">
       </td>
    </tr>
 </table>
+
 ## Contents
 
 * <b>survplots.py</b> - visualization and analysis tool built using the lifelines library for survival analysis (Davidson-Pilon, 2019). It provides easy-to-generate plots and analyses for exploring survival data, including Kaplan-Meier survival curves, value counts, histograms, boxplots with results of Kruskal-Wallis Test and Fisher's exact tests to assess relationships between binary factors and outcomes. The tool supports custom legends, data pre-filtering, and group size adjustments, making it highly adaptable for large survival studies. Outputs include various plot types and summaries that are automatically compiled into a PDF report, offering a streamlined workflow for robust survival analysis and reporting. <br>
@@ -227,8 +228,10 @@ The **pyoncoplot** tool, based on the **pyoncoprint** library ([PubMed link](htt
 
 
 `adaptree.py` is a command-line tool designed to facilitate decision tree modeling, preprocessing, and optimization. It provides a flexible way to preprocess data, train decision tree classifiers, and visualize the results using tools like `dtreeviz`. Additionally, the script includes support for hyperparameter optimization through Gaussian process minimization.
+
 <details>
      <summary>Parameters and options of adaptree</summary>
+   
 #### Key Features
 - **Data Preprocessing**:
   - Categorical variable renaming and one-hot encoding.
