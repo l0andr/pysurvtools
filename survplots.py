@@ -277,6 +277,7 @@ if __name__ == '__main__':
                         default=10)
     parser.add_argument("--max_survival_length", help="Maximum consider time interval in Kaplan-meier plots", type=float,
                         default=365*5)
+    parser.add_argument("-font_size", help="Font size for all text elements (labels, ticks, legend)", type=int, default=14)
     parser.add_argument("--show", help="If set, plots will be shown", default=False,
                         action='store_true')
     parser.add_argument("--verbose", help="Verbose mode", type=int, default=1)
@@ -286,7 +287,7 @@ if __name__ == '__main__':
     parser.add_argument("--tiff", help="If set, plots will be saved in tiff format", default=False, action='store_true')
     args = parser.parse_args()
     input_csv = args.input_csv
-
+    font_size = args.font_size
     status_col = args.status_col
     tiff_dpi = 100
     survival_time_col = args.survival_time_col
@@ -418,9 +419,11 @@ if __name__ == '__main__':
         #select top 10 columns with maximal number of cases
         columns_top_10 = [x for _, x in sorted(zip(total_number_of_cases, columns_binary), reverse=True)][:10]
         columns_top_10_names = [x.replace(columns_prefix,'') for x in columns_top_10]
+        max_number_of_cases = max(total_number_of_cases) if len(total_number_of_cases) > 0 else 0
         if args.verbose > 1:
             print(f"Top 10 columns with maximal number of cases: {columns_top_10_names}")
         for col in columns_binary:
+            col_number_of_cases = sum(df[col])
             good_outcome_factor_true[col] = tdf_good_response[col].sum()
             good_outcome_factor_false[col] = len(tdf_good_response) - good_outcome_factor_true[col]
             bad_outcome_factor_true[col] = tdf_bad_response[col].sum()
@@ -432,7 +435,8 @@ if __name__ == '__main__':
             if 0 in ftable[0] or 0 in ftable[1]:
                 continue
             oddsratio, pvalue = fisher_exact(ftable)
-            fisher_results[col] = (oddsratio,pvalue)
+            dot_size = col_number_of_cases / max_number_of_cases * 300
+            fisher_results[col] = (oddsratio,pvalue,dot_size)
             if pvalue < p_value_threshold and args.verbose > 1:
                 print(f"Factor {col} oddsratio {oddsratio:.4f} pvalue {pvalue:.4f} [TP TN FP FN]:{ftable}")
                 raw_lables.append(col)
@@ -447,14 +451,15 @@ if __name__ == '__main__':
         genes = [x for x in fisher_results.keys()]
         #remove perfix genes_ from gene names
         genes = [x.replace(columns_prefix,'') for x in genes]
-        ax.scatter(np.log2([x[0] for x in fisher_results.values()]),-np.log10([x[1] for x in fisher_results.values()]))
-        ax.set_xlabel('Log2(Odds ratio)')
-        ax.set_ylabel('-Log10(P-value)')
+        dot_size = [x[2] for x in fisher_results.values()]
+        ax.scatter(np.log2([x[0] for x in fisher_results.values()]),-np.log10([x[1] for x in fisher_results.values()]), s=[x[2] for x in fisher_results.values()], alpha=0.9)
+        ax.set_xlabel('Log2(Odds ratio)',fontsize=font_size)
+        ax.set_ylabel('-Log10(P-value)',fontsize=font_size)
         ax.grid()
         #select pvalue  < 0.05 and plot them in red
-        all_results = pd.DataFrame({'log2(OddsRatio)':np.log2(oddsratio),'-log10(p-value)':-np.log10(pvalue),'name':genes},index=genes)
+        all_results = pd.DataFrame({'log2(OddsRatio)':np.log2(oddsratio),'-log10(p-value)':-np.log10(pvalue),'name':genes,'dot_size':dot_size},index=genes)
         significant = all_results[all_results['-log10(p-value)'] > -np.log10(p_value_threshold)]
-        plt.scatter(significant['log2(OddsRatio)'], significant['-log10(p-value)'], color='red')
+        plt.scatter(significant['log2(OddsRatio)'], significant['-log10(p-value)'], color='red',s=significant['dot_size'], alpha=0.9)
 
         #TODO: implement more general and robust solution for text shifts
         txt_shift_dict = {}
@@ -464,8 +469,8 @@ if __name__ == '__main__':
                 txt_shift_dict[k] = 0
             else:
                 txt_shift_dict[k] += 1
-            ax.annotate("  " + txt, (significant['log2(OddsRatio)'][i], significant['-log10(p-value)'][i]-txt_shift_dict[k]*0.035),
-                        rotation=0 * int(i) % 360, fontsize=8,ha='left')
+            ax.annotate("  " + txt+f" n={int(significant['dot_size'][i]*max_number_of_cases/300)}", (significant['log2(OddsRatio)'][i], significant['-log10(p-value)'][i]-txt_shift_dict[k]*0.0035*font_size),
+                        rotation=10, fontsize=font_size,ha='left')
 
         txt_shift_dict2 = {}
         #plot text labels for most frequent columns 
@@ -479,19 +484,19 @@ if __name__ == '__main__':
                 else:
                     txt_shift_dict2[k] += 1
                 ax.annotate("  " + txt, (
-                all_results['log2(OddsRatio)'][i], all_results['-log10(p-value)'][i] - txt_shift_dict2[k] * 0.035),
-                        rotation=0 * int(i) % 360, fontsize=8, ha='left')
+                all_results['log2(OddsRatio)'][i], all_results['-log10(p-value)'][i] - txt_shift_dict2[k] *0.0035*font_size),
+                        rotation=10, fontsize=font_size, ha='left')
 
         ax.axhline(-np.log10(p_value_threshold), color='r', linestyle='--')
         # plot text near line with p_value_threshold
-        ax.text(0.1, -np.log10(p_value_threshold) + 0.02, f'p-value = {p_value_threshold}', rotation=0, fontsize=12)
+        ax.text(0.05, -np.log10(p_value_threshold) - 0.06, f'p-value = {p_value_threshold}', rotation=0, fontsize=font_size,color='r')
         ax.axhline(-np.log10(p_value_threshold2), color='r', linestyle='-.')
         # plot text near line with p_value_threshold
-        ax.text(0.1, -np.log10(p_value_threshold2) + 0.02, f'p-value = {p_value_threshold2}', rotation=0, fontsize=12)
+        ax.text(0.05, -np.log10(p_value_threshold2) - 0.06, f'p-value = {p_value_threshold2}', rotation=0, fontsize=font_size,color='r')
 
         # and vertical line at log2(oddsratio) = 0
         ax.axvline(0, color='k', linestyle='-', linewidth=1)
-        plt.title(f'{args.title} Exact Fisher test. ')
+        plt.title(f'{args.title} Exact Fisher test. ',fontsize=font_size)
         plt.tight_layout()
         pp.savefig(fig)
         if args.tiff:
@@ -500,7 +505,7 @@ if __name__ == '__main__':
         i = 0
         for col in columns:
             i = i + 1
-            fig, ax = plot_kruskal_wallis_boxplot(df, col, survival_time_col, legend_dict=legend_dict)
+            fig, ax = plot_kruskal_wallis_boxplot(df, col, survival_time_col, legend_dict=legend_dict,fontsize=font_size)
             pp.savefig(fig)
             if args.tiff:
                 fig.savefig(f"{args.output_pdf[:-4]}_kruskal_wallis_test_{col}.tiff", dpi=tiff_dpi, format='tiff')
