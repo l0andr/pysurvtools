@@ -207,7 +207,7 @@ def plot_histograms_of_float_values(df_clean:pd.DataFrame):
 
 def plot_kaplan_meier(df_pu: pd.DataFrame, column_name: str,
                            status_column: str = "Status", survival_in_days: str = "Survival_in_days",
-                           legend_dict = None):
+                           legend_dict = None,fontsize=14):
 
         diff_values = sorted(df_pu[column_name].dropna().unique().tolist())
 
@@ -244,13 +244,14 @@ def plot_kaplan_meier(df_pu: pd.DataFrame, column_name: str,
 
             kmf.fit(df_pu[survival_in_days][ix], df_pu[status_column][ix],
                     label=full_label + f" p-value = {p_values[s]:.5f} ")
-            kmf.plot_survival_function(ax=ax[0], ci_legend=True)
+            kmf.plot_survival_function(ax=ax[0],fontsize=fontsize)
             at_risk_lables.append(f"{full_label}")
+            plt.legend(fontsize=fontsize-2)
             kmfs.append(kmf)
-        add_at_risk_counts(*kmfs, labels=at_risk_lables, ax=ax[0])
-        ax[0].set_ylabel("est. probability of survival $\hat{S}(t)$")
-        ax[0].set_xlabel(f"time $t$ (days)")
-        ax[0].set_title(f"Kaplan-Meier survival estimates [{survival_in_days}] ")
+        add_at_risk_counts(*kmfs, labels=at_risk_lables, ax=ax[0], fontsize=fontsize-2)
+        ax[0].set_ylabel("est. probability of survival $\hat{S}(t)$", fontsize=fontsize)
+        ax[0].set_xlabel(f"time $t$ (days)", fontsize=fontsize)
+        ax[0].set_title(f"Kaplan-Meier survival estimates [{survival_in_days}] ", fontsize=fontsize)
         plt.tight_layout()
         return fig
 
@@ -368,7 +369,7 @@ if __name__ == '__main__':
             if args.verbose > 1:
                 print(f"Plotting kaplan_meier for column {col} {len(columns)}\{i}. Number of unique values is {df[col].nunique()}. Number of Nulls is {df[col].isnull().sum()}")
             try:
-                fig = plot_kaplan_meier(df_filtered, col, status_col, survival_time_col, legend_dict=legend_dict)
+                fig = plot_kaplan_meier(df_filtered, col, status_col, survival_time_col, legend_dict=legend_dict, fontsize=font_size)
                 pp.savefig(fig)
                 if args.tiff:
                     fig.savefig(f"{args.output_pdf[:-4]}_{col}.tiff", dpi=tiff_dpi, format='tiff')
