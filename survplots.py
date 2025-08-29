@@ -16,6 +16,8 @@ from scipy.stats import fisher_exact
 
 import scipy.stats as stats
 
+
+
 def plot_kruskal_wallis_boxplot(df:pd.DataFrame, split_column:str, value_column:str, legend_dict ={},title ="",xlabel = "",ylabel = "", fontsize=14):
     fig, ax = plt.subplots(figsize=(12, 12), nrows=1, ncols=1)
     values_lists =[]
@@ -186,7 +188,51 @@ def plot_value_counts(df, columns):
     plt.tight_layout()
     return fig, axes
 
+def plot_two_columns_bars_comparison(df:pd.DataFrame, column1:str, column2:str, fontsize=14,title="",legend_dict ={}):
+    fig, ax = plt.subplots(figsize=(12, 12), nrows=1, ncols=1)
+    if not isinstance(ax, np.ndarray):
+        ax = [ax]
+    #split df by unique values in column1 and plot histogram of column2 for each value in column1
+    #column1 should be used for tickets, column 2 should be shown by color and legend
+    #bars should be side by side
+    unique_values_col1 = df[column1].unique()
+    unique_values_col2 = df[column2].unique()
+    labels_1 = {str(x): str(x) for x in unique_values_col2}
+    if column1 in legend_dict:
+        for i, x in enumerate(unique_values_col1):
+            if str(x) in legend_dict[column1]:
+                labels_1[str(x)] = legend_dict[column1][str(x)]
 
+    labels_2 = {str(x): str(x) for x in unique_values_col2 }
+    if column2 in legend_dict:
+        if 'legend name' in legend_dict[column2]:
+            labels_2 = {str(x): legend_dict[column2]['legend name'] + " = " + str(x) for x in unique_values_col2}
+        else:
+            for x in enumerate(unique_values_col2):
+                if str(x) in legend_dict[column2]:
+                    labels_2[str(x)] = legend_dict[column2][str(x)]
+
+    bar_width = 0.8 / len(unique_values_col2)
+    for i, val2 in enumerate(unique_values_col2):
+        counts = df[df[column2] == val2][column1].value_counts().reindex(unique_values_col1, fill_value=0)
+        ax[0].bar(np.arange(len(unique_values_col1)) + i * bar_width, counts.values, width=bar_width, label=labels_2[str(val2)])
+    ax[0].legend(fontsize=fontsize-2)
+    ax[0].set_xticks(ticks=np.arange(len(unique_values_col1)) + bar_width * (len(unique_values_col2) - 1) / 2)
+    labels_for_plot = []
+    for x in unique_values_col1:
+        labels_for_plot.append(labels_1[str(x)])
+
+    ax[0].set_xticklabels(labels_for_plot, rotation=45, ha='right', fontsize=fontsize)
+
+    #labels for plot is values in labels_1 sorted by keys in unique_values_col1
+    if column1 in legend_dict and 'legend name' in legend_dict[column1]:
+        ax[0].set_xlabel(legend_dict[column1]['legend name'], fontsize=fontsize)
+    #ax[0].set_xlabel(column1, fontsize=fontsize)
+    ax[0].set_ylabel("Number of Occurrences", fontsize=fontsize)
+    ax[0].set_title(title, fontsize=fontsize)
+    plt.tight_layout()
+
+    return fig, ax
 def plot_histograms_of_float_values(df_clean:pd.DataFrame):
     # plot in one figure histogram of all float columns with number of unique values more than sqrt(len(df.index))
     df_tmp = df_clean.loc[:, df_clean.dtypes == np.float64]
@@ -263,7 +309,7 @@ def keep_only_specific_columns(df, keep_columns, ignore_columns):
 
 from version import __version__
 if __name__ == '__main__':
-    list_of_plot_types = ["kaplan_meier", "pieplots", "floathistograms", "valuecounts",'fisher_exact_test','kruskal_wallis_test']
+    list_of_plot_types = ["kaplan_meier", "pieplots", "floathistograms", "valuecounts",'fisher_exact_test','kruskal_wallis_test','set_of_bars_plots']
     parser = argparse.ArgumentParser(description=f"Plot figures for survival analysis (ver: {__version__})",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--input_csv", help="Input CSV file", type=str, required=True)
@@ -325,10 +371,11 @@ if __name__ == '__main__':
     if number_of_rows_before_status_column_nan_filtering != len(df.index):
         print(f"survplots:Warning: Number of rows after NaN in status column filtering:{len(df.index)}")
     #check if status column is binary
-    if df[status_col].nunique() != 2:
+    if df[status_col].nunique() != 2 and plot_type != "set_of_bars_plots":
         raise RuntimeError(f"Column {status_col} is not binary")
     #convert status column to boolean
-    df[status_col] = df[status_col].astype(bool)
+    if plot_type != "set_of_bars_plots":
+        df[status_col] = df[status_col].astype(bool)
 
 
     if plot_type == "kaplan_meier":
@@ -376,6 +423,15 @@ if __name__ == '__main__':
             except Exception as e:
                 print(f"Error while plotting kaplan_meier for column {col}: {str(e)}")
                 raise e
+    elif plot_type == "set_of_bars_plots":
+        i = 0
+        column1= args.status_col
+        for column2 in columns:
+            i = i + 1
+            fig, ax = plot_two_columns_bars_comparison(df, column1, column2, fontsize=font_size,title=args.title,legend_dict=legend_dict)
+            pp.savefig(fig)
+            if args.tiff:
+                fig.savefig(f"{args.output_pdf[:-4]}_set_of_bars_plots_{column2}.tiff", dpi=tiff_dpi, format='tiff')
     elif plot_type == "pieplots":
         fig, ax = plot_piecharts_of_categorial_variables(df.loc[:,columns])
         pp.savefig(fig)
